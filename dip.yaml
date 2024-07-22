@@ -1,0 +1,62 @@
+---
+
+- name: Install jenkins
+
+  hosts: test
+
+  become: yes
+
+  become_user: root
+
+  tasks:
+    - name: yum update
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Download Long Term Jenkins release
+
+      get_url:
+
+        url: https://pkg.jenkins.io/redhat/jenkins.repo
+
+        dest: /etc/yum.repos.d/jenkins.repo
+
+    - name: Import jenkins key from url
+
+      ansible.builtin.rpm_key:
+
+        state: present
+
+        key: https://pkg.jenkins.io/debian/jenkins.io-2023.key
+
+    - name: yum update
+
+      yum:
+
+        name: '*'
+
+        state: latest
+
+    - name: java install
+      yum:
+        name: java-11-amazon-corretto
+        state: present  
+
+    - name: install jenkins
+
+      yum:
+
+        name: jenkins
+
+        state: present
+
+    - name: Start jenkins
+
+      ansible.builtin.systemd:
+
+        enabled: yes
+
+        name: jenkins
+
+        state: started
