@@ -1,0 +1,41 @@
+---
+- name: Install Node Exporter
+  hosts: test
+  become: yes  # This allows Ansible to become root on the target machine
+
+  vars:
+    node_exporter_version: "1.3.0"  # Replace with the correct version number
+
+  tasks:
+    - name: Download Node Exporter
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter.tar.gz
+        mode: 0644
+
+    - name: Extract Node Exporter
+      ansible.builtin.unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /opt
+        remote_src: yes
+        creates: /opt/node_exporter-{{ node_exporter_version }}
+
+    - name: Create symlink
+      ansible.builtin.file:
+        src: "/opt/node_exporter-{{ node_exporter_version }}"
+        dest: "/opt/node_exporter"
+        state: link
+
+    - name: Add systemd service
+      ansible.builtin.template:
+        src: node_exporter.service.j2
+        dest: /etc/systemd/system/node_exporter.service
+      notify:
+        - restart node_exporter
+
+    - name: Start Node Exporter
+      ansible.builtin.service:
+        name: node_exporter
+        state: started
+        enabled: yes
+
